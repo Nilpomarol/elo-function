@@ -26,5 +26,13 @@ valor base ~~ 60
 
 
 
+Preguntes:
+
+Afecta posicio final per exemple comença 1 -> 2 no es el mateix que 5 -> 6
+sempre que es baixa pistes resta?
+que pasa si no et mous?
+
+
+
 
 
