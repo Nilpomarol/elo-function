@@ -235,8 +235,8 @@ def page3():
     print (len(ratings))
     for i in range(0,24,2):
         with colR[i]:
-            st.number_input(f"Canvio elo Jugador {i+1}", min_value=new_elo_team1[i//2][0], max_value = new_elo_team1[i//2][0],value=new_elo_team1[i//2][0])
-            st.number_input(f"Canvio elo Jugador {i+1}", min_value=new_elo_team1[i//2][1], max_value = new_elo_team1[i//2][1],value=new_elo_team1[i//2][1])
+            st.text_input(f"Canvio elo Jugador {i+1}", str(new_elo_team1[i//2][0]), disabled=True)
+            st.text_input(f"Canvio elo Jugador {i+1}", new_elo_team1[i//2][1], disabled=True)
 
 
 st.set_page_config(layout="wide")
