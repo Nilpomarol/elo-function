@@ -1,4 +1,5 @@
 import math
+import random
 import streamlit as st
 
 
@@ -57,17 +58,50 @@ def update_elo_2v2(team1_ratings, team2_ratings, result, K=32, ratio = 400, base
    
 def page1():
     # Ejemplo de uso
-    col1, col2 = st.columns(2)
+    
+    st.subheader("Calculadora de Puntajes Elo Partidos Normales")
+    with st.expander("Parámetros de Elo"):
+        ratio = st.slider("Importancia de Diferencia de Ratings", min_value=100, max_value=6000, value=400, step=50)
+        k = st.slider("Factor de Ajuste Elo", min_value=0, max_value=100, value=20, step=5)
+    
+    rating1 = 1200
+    rating2 = 1210
+    rating3 = 1220
+    rating4 = 1230
+    result = [7, 5]
+    
+    
+    st.subheader("Generar Ratings Aleatorios")
+    with st.expander("Parámetros de Aleatoriedad"):
+        min_rating = st.number_input("Rating Mínimo", value=1000)
+        max_rating = st.number_input("Rating Máximo", value=1500)
+    generate_button = st.button("Generar Ratings Aleatorios")
+    if generate_button:
+        rating1 = random.randint(min_rating, max_rating)
+        rating2 = random.randint(min_rating, max_rating)
+        rating3 = random.randint(min_rating, max_rating)
+        rating4 = random.randint(min_rating, max_rating)
+        
+        result1 = random.randint(0, 1)
+        if result1 == 0:
+            result1 = random.randint(0, 6)
+            result2 = 7
+        else:
+            result1 = 7
+            result2 = random.randint(0, 6)
+        
+        result = [result1, result2]
 
+    col1, col2 = st.columns(2)
     with col1:
-        ratio = int(st.text_input("Importancia diferencia de ratings: ", "400"))  # Ratio de diferencia de puntajes Elo
+        
         st.write("Equipo 1:")
-        team1_elo = [int(st.text_input("jugador 1: ", "1349")), int(st.text_input("jugador 2: ", "1270"))]  # Puntajes Elo de los jugadores en el equipo 1
+        team1_elo = [int(st.text_input("jugador 1: ", rating1)), int(st.text_input("jugador 2: ", rating2))]  # Puntajes Elo de los jugadores en el equipo 1
     with col2:
-        k = int(st.text_input("Factor de ajuste Elo: ", "20"))  # Factor de ajuste Elo
+        
         st.write("Equipo 2:")
-        team2_elo = [int(st.text_input("jugador 3: ", "1406")), int(st.text_input("jugador 4: ", "1402"))]  # Puntajes Elo de los jugadores en el equipo 2
-    result = st.text_input("Result: ", "3-7").split("-")
+        team2_elo = [int(st.text_input("jugador 3: ", rating3)), int(st.text_input("jugador 4: ", rating4))]  # Puntajes Elo de los jugadores en el equipo 2
+    result = st.text_input("Result: ", str(result[0]) +"-"+ str(result[1])).split("-")
     result = [int(result[0]), int(result[1])]
 
 
@@ -85,21 +119,55 @@ def page1():
             
 def page2():
     # Ejemplo de uso
-    col1, col2 = st.columns(2)
+    st.subheader("Calculadora de Puntajes Elo Partidos Americana")
+    with st.expander("Parámetros de Elo"):
+        ratio = st.slider("Importancia de Diferencia de Ratings", min_value=100, max_value=6000, value=400, step=50)
+        k = st.slider("Factor de Ajuste Elo", min_value=0, max_value=100, value=20, step=5)
+        puntuacionBase = st.slider("Puntuación Base", min_value=0, max_value=100, value=20, step=5)
+    
+    rating1 = 1200
+    rating2 = 1210
+    rating3 = 1220
+    rating4 = 1230
+    result = [7, 5]
+    
+    
+    st.subheader("Generar Ratings Aleatorios")
+    with st.expander("Parámetros de Aleatoriedad"):
+        min_rating = st.number_input("Rating Mínimo", value=1000)
+        max_rating = st.number_input("Rating Máximo", value=1500)
+    generate_button = st.button("Generar Ratings Aleatorios")
+    if generate_button:
+        rating1 = random.randint(min_rating, max_rating)
+        rating2 = random.randint(min_rating, max_rating)
+        rating3 = random.randint(min_rating, max_rating)
+        rating4 = random.randint(min_rating, max_rating)
+        
+        result1 = random.randint(0, 1)
+        if result1 == 0:
+            result1 = random.randint(0, 6)
+            result2 = 7
+        else:
+            result1 = 7
+            result2 = random.randint(0, 6)
+        
+        result = [result1, result2]
 
+    col1, col2 = st.columns(2)
     with col1:
-        ratio = int(st.text_input("Importancia diferencia de ratings: ", "400"))  # Ratio de diferencia de puntajes Elo
+        
         st.write("Equipo 1:")
-        team1_elo = [int(st.text_input("jugador 1: ", "1349")), int(st.text_input("jugador 2: ", "1270"))]  # Puntajes Elo de los jugadores en el equipo 1
+        team1_elo = [int(st.text_input("jugador 1: ", rating1)), int(st.text_input("jugador 2: ", rating2))]  # Puntajes Elo de los jugadores en el equipo 1
     with col2:
-        k = int(st.text_input("Factor de ajuste Elo: ", "20"))  # Factor de ajuste Elo
+        
         st.write("Equipo 2:")
-        team2_elo = [int(st.text_input("jugador 3: ", "1406")), int(st.text_input("jugador 4: ", "1402"))]  # Puntajes Elo de los jugadores en el equipo 2
-    result = st.text_input("Result: ", "3-7").split("-")
+        team2_elo = [int(st.text_input("jugador 3: ", rating3)), int(st.text_input("jugador 4: ", rating4))]  # Puntajes Elo de los jugadores en el equipo 2
+    result = st.text_input("Result: ", str(result[0]) +"-"+ str(result[1])).split("-")
     result = [int(result[0]), int(result[1])]
 
 
-    new_elo_team1, new_elo_team2 = update_elo_2v2(team1_elo, team2_elo, result, k, ratio, base = 25)
+
+    new_elo_team1, new_elo_team2 = update_elo_2v2(team1_elo, team2_elo, result, k, ratio, base = puntuacionBase)
     st.write("Nuevos puntajes Elo:")
     col1, col2 = st.columns(2)
     with col1:
