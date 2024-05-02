@@ -54,7 +54,67 @@ def update_elo_2v2(team1_ratings, team2_ratings, result, K=32, ratio = 400, base
     
     return team1_new_ratings, team2_new_ratings
    
-   
+def update_elo_american(ratings, results, K=32, ratio = 400, base = 50, numpistas = 6):
+    """
+    Calcula los nuevos puntajes Elo de los jugadores después de un torneo de sistema americano.
+
+    Args:
+        results (list): Lista de resultados de los partidos en el torneo.
+        ratings (list): Lista de puntajes Elo de los jugadores.
+        K (int): Factor de ajuste Elo (por defecto, K = -32 para aumentar la sensibilidad).
+
+    Returns:
+        list: Lista con los nuevos puntajes Elo de los jugadores.
+    """
+    # Calcula los nuevos puntajes Elo de los jugadores
+    new_ratings = []
+    avg = 0
+    for pareja in ratings: 
+        avg += pareja[0] + pareja[1]
+    avg = avg / (len(ratings)*2)
+    
+    i = 0
+    
+    for result in results:
+        pistainicial = result[0]
+        pistafinal = result[1]
+        gained = pistafinal - pistainicial
+        
+        americana_result = (gained / numpistas)/2+0.5
+        
+        new_ratings_pareja = []
+        
+        for jugador in ratings[i]:
+            base = calculatebase(jugador, avg, pistafinal)
+            P = 1/ (1 + 1 * math.pow(10, 1 * (avg - jugador) / ratio))
+            new_ratings_pareja.append(int(round(base+K * (americana_result - P))))
+            
+        new_ratings.append((new_ratings_pareja[0],new_ratings_pareja[1]))
+        i += 1
+
+    return new_ratings
+
+
+def calculatebase(jugador, avg, pistafinal):
+    diff = jugador - avg
+    if diff > 1000:
+        base = 15
+    elif diff > 500:
+        base = 20
+    elif diff > 0:
+        base = 30
+    elif diff > -300:
+        base = 40
+    elif diff > -600:
+        base = 50
+    else:
+        base = 60
+    base += pistafinal*2
+        
+    
+    
+    
+    
 def page1():
     # Ejemplo de uso
     col1, col2 = st.columns(2)
