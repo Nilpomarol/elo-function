@@ -55,7 +55,7 @@ def update_elo_2v2(team1_ratings, team2_ratings, result, K=32, ratio = 400, base
     
     return team1_new_ratings, team2_new_ratings
    
-def update_elo_american(ratings, results, K=32, ratio = 400,numpistas = 6):
+def update_elo_american(ratings, results, K=100, ratio = 800,numpistas = 6):
     """
     Calcula los nuevos puntajes Elo de los jugadores después de un torneo de sistema americano.
 
@@ -86,51 +86,23 @@ def update_elo_american(ratings, results, K=32, ratio = 400,numpistas = 6):
         new_ratings_pareja = []
         
         for jugador in ratings[i]:
-            base = calculatebase(jugador, avg, pistafinal)
             P = 1/ (1 + 1 * math.pow(10, 1 * (avg - jugador) / ratio))
-            new_ratings_pareja.append(int(round(base+K * (americana_result - P))))
+            new_elo = int(round(K * (americana_result - P)))
+            if new_elo >= 0:
+                elodiff = jugador - avg
+                if elodiff < -200:
+                    new_elo += 20
+                elif elodiff < -100:
+                    new_elo += 15
+                else:
+                    new_elo += 10
+            new_ratings_pareja.append(new_elo)
             
         new_ratings.append((new_ratings_pareja[0],new_ratings_pareja[1]))
         i += 1
 
     return new_ratings
 
-
-def calculatebase(jugador, avg, pistafinal, difPista = 0):
-    
-    if difPista >= 0:
-        diff = jugador - avg
-        if diff > 1000:
-            base = 15
-        elif diff > 500:
-            base = 20
-        elif diff > 0:
-            base = 30
-        elif diff > -300:
-            base = 40
-        elif diff > -600:
-            base = 50
-        else:
-            base = 60
-        base += pistafinal*2
-    else:
-        diff = jugador - avg
-        if diff > 1000:
-            base = -60
-        elif diff > 500:
-            base = -50
-        elif diff > 0:
-            base = -40
-        elif diff > -300:
-            base = -30
-        elif diff > -600:
-            base = -20
-        else:
-            base = -15
-    
-    return base
-    
-    
     
 def page1():
     # Ejemplo de uso
@@ -192,8 +164,8 @@ def page3():
     st.title("Configuración de Parámetros")
 
     with st.expander("Parámetros de Elo"):
-        ratio = st.slider("Importancia de Diferencia de Ratings", min_value=100, max_value=1000, value=400, step=50)
-        k = st.slider("Factor de Ajuste Elo", min_value=10, max_value=50, value=20, step=5)
+        ratio = st.slider("Importancia de Diferencia de Ratings", min_value=100, max_value=1000, value=800, step=50)
+        k = st.slider("Factor de Ajuste Elo", min_value=10, max_value=200, value=100, step=5)
 
     # Sección para generar Ratings aleatorios
     st.subheader("Generar Ratings Aleatorios")
@@ -239,9 +211,52 @@ def page3():
             st.text_input(f"Canvio elo Jugador {i+1}", new_elo_team1[i//2][1], disabled=True)
 
 
+def page4():
+    st.title("Configuración de Parámetros")
+
+    with st.expander("Parámetros de Elo"):
+        ratio = st.slider("Importancia de Diferencia de Ratings", min_value=100, max_value=3000, value=800, step=50)
+        k = st.slider("Factor de Ajuste Elo", min_value=10, max_value=200, value=100, step=5)
+    
+    st.subheader("Entrada de Ratings y Resultados")
+    
+    with st.expander("Configuración de Ratings Aleatorios", expanded=True):
+        variability = st.number_input("Variabilitat respecte la mitjana", value=200)
+        average = st.number_input("mitjana", value=1500)
+
+    generate_ratings = st.button("Ratings Aleatorios")
+
+
+    ratings = [(1500, 1500), (average, average),(average, average),(average, average),(average, average),(average, average),(average, average),(average, average),(average, average),(average, average),(average, average),(average, average),]
+    results = [(1, 1), (1,1), (2,2), (2,2), (3,3), (3,3), (4,4), (4,4), (5,5), (5,5), (6,6), (6,6)]
+
+    if generate_ratings == True:
+        randratings = (random.randint(average-variability, average+variability), random.randint(average-variability, average+variability))
+        ratings[0] = randratings
+        result = (random.randint(1,6), random.randint(1,6))
+        results[0] = result
+    
+    with st.expander("Pareja 0: ", expanded = True):
+        col1, col2 = st.columns(2)
+        with col1:
+            ratings[0] = (st.number_input("Jugador 1: ", value=ratings[0][0]), st.number_input("Jugador 2: ", value=ratings[0][1]))
+        with col2:
+            results[0] = (st.number_input("Pista Inicial: ", min_value=1, max_value = 6, value=results[0][0]), st.number_input("Pista Final: ", min_value=1, max_value = 6, value=results[0][1]))
+
+    new_elo_team1 = update_elo_american(ratings, results, k, ratio)
+
+    st.write("Nuevos puntajes Elo:")
+    st.write("Pareja 0:")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write(f"Jugador 1: {ratings[0][0]} -> {new_elo_team1[0][0]}")
+    with col2:
+        st.write(f"Jugador 2: {ratings[0][1]} -> {new_elo_team1[0][1]}")
+
+
 st.set_page_config(layout="wide")
             
-menu = st.sidebar.radio("Menu", ["Partido Normal", "Americana", "Americana Sube-Baja"])
+menu = st.sidebar.radio("Menu", ["Partido Normal", "Americana", "Americana Sube-Baja", "Americana Sube-baja prueba"])
 
 
 if menu == "Partido Normal":
@@ -250,5 +265,7 @@ elif menu == "Americana":
     page2()
 elif menu == "Americana Sube-Baja":
     page3()
+elif menu == "Americana Sube-baja prueba":
+    page4()
 else:
     st.error("Opción no válida")
