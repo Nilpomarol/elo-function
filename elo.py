@@ -90,16 +90,30 @@ def update_elo_american(ratings, results, K=100, ratio = 800,numpistas = 6, base
             P = 1/ (1 + 1 * math.pow(10, 1 * (avg - jugador) / ratio))
             if first== True:
                 print(int(round(K * (americana_result - P))))
-                first = False
             new_elo = int(round(K * (americana_result - P)))
-            if new_elo >= 0:
+            if americana_result >= 0.5:
                 elodiff = jugador - avg
                 if elodiff < -200:
-                    new_elo += base + 10
+                    new_elo += base + 15
                 elif elodiff < -100:
-                    new_elo += base + 5
+                    new_elo += base + 10
                 else:
                     new_elo += base
+            else:
+                elodiff = jugador - avg
+                if elodiff < -200:
+                    new_elo -= base 
+                elif elodiff < 0:
+                    new_elo -= base + 5
+                elif elodiff < 150:
+                    new_elo -= base + 10
+                else:
+                    new_elo -= base + 15
+            if first == True:
+                print (elodiff)
+                print(new_elo)
+                print(americana_result)
+                first = False
             new_ratings_pareja.append(new_elo)
             
         new_ratings.append((new_ratings_pareja[0],new_ratings_pareja[1]))
