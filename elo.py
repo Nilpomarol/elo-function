@@ -82,8 +82,6 @@ def update_elo_american(ratings, results, K=100, ratio = 800,numpistas = 6, base
 
     return new_ratings
 
-
-
 ####################################################################INTERFICIE STREAMLIT####################################################################
 
 
@@ -158,9 +156,7 @@ def page2():
             ratio = st.slider("Importancia de Diferencia de Ratings (Ratio)", min_value=100, max_value=2000, value=400, step=50)
             k = st.slider("Factor de Ajuste Elo (K)", min_value=0, max_value=100, value=20, step=2)
             base = st.slider("Valor Base (Base)", min_value=0, max_value=100, value=20, step=1)
-
-        
-
+            
     if "ratings" not in st.session_state:
         st.session_state["ratings"] = [1200, 1210, 1220, 1230]
         st.session_state["result"] = [7, 5]
