@@ -61,48 +61,19 @@ def update_elo_american(ratings, results, K=100, ratio = 800,numpistas = 6, base
         pistainicial = result[0]
         pistafinal = result[1]
         gained = pistainicial - pistafinal 
+        factor = (1 + abs(gained) * 2 / 6)
+        if (gained < 0):
+            factor *= -1
         
+        print("factor: " + str(factor))
         americana_result = (gained / numpistas)/2+0.5
         
+    
         new_ratings_pareja = []
         
         for jugador in ratings[i]:
-            P = 1/ (1 + 1 * math.pow(10, 1 * (avg - jugador) / ratio))
-            new_elo = int(round(K * (americana_result - P)))
-            
-            if americana_result > P:
-                elodiff = jugador - avg
-                if elodiff < -200:
-                    new_elo += base + 15
-                elif elodiff < 0:
-                    new_elo += base + 10
-                elif elodiff < 150:
-                    new_elo += base + 5
-                else:
-                    new_elo += base 
-            if americana_result >= 0.5:
-                elodiff = jugador - avg
-                if elodiff < -200:
-                    new_elo += base + 15
-                elif elodiff < -100:
-                    new_elo += base + 10
-                else:
-                    new_elo += base
-            else:
-                elodiff = jugador - avg
-                if elodiff < -200:
-                    new_elo -= base 
-                elif elodiff < 0:
-                    new_elo -= base + 5
-                elif elodiff < 150:
-                    new_elo -= base + 10
-                else:
-                    new_elo -= base + 15
-                    
-            if first == True:
-                print(new_elo)
-                print(americana_result)
-                first = False
+            P = 1/ (1 + math.pow(10, (avg - jugador) / ratio))
+            new_elo = int(round(factor * base + K * (americana_result - P)))
             new_ratings_pareja.append(new_elo)
             
         new_ratings.append((new_ratings_pareja[0],new_ratings_pareja[1]))
@@ -235,61 +206,62 @@ def page2():
         df = pd.DataFrame(data)
         st.table(df)
        
+# def page3():
+#     st.title("Configuración de Parámetros")
+
+#     with st.expander("Parámetros de Elo"):
+#         ratio = st.slider("Importancia de Diferencia de Ratings", min_value=100, max_value=1000, value=800, step=50)
+#         k = st.slider("Factor de Ajuste Elo", min_value=10, max_value=200, value=32, step=2)
+
+#     # Sección para generar Ratings aleatorios
+#     st.subheader("Generar Ratings Aleatorios")
+#     with st.expander("Configuración de Ratings Aleatorios"):
+#         min_rating = st.number_input("Rating Mínimo", value=1000)
+#         max_rating = st.number_input("Rating Máximo", value=1500)
+#     generate_button = st.button("Generar Ratings Aleatorios")
+    
+#     ratings = [(1000, 1270), (1349, 1270),(1349, 1270),(1349, 1270),(1349, 1270),(1349, 1270),(1349, 1270),(1349, 1270),(1349, 1270),(1349, 1270),(1349, 1270),(1349, 1270)]
+    
+#     if generate_button:
+#         # Generar los pares de ratings aleatorios
+#         num_pairs = 12  # Número de pares de ratings que deseas generar (6 parejas)
+#         ratings = [(random.randint(min_rating, max_rating), random.randint(min_rating, max_rating)) for _ in range(num_pairs)]
+
+#     # Sección de Entrada de Ratings y Resultados
+#     st.subheader("Entrada de Ratings y Resultados")
+
+    
+#     results = [(1, 1), (1,1), (2,2), (2,2), (3,3), (3,3), (4,4), (4,4), (5,5), (5,5), (6,6), (6,6)]
+#     colR = {}
+#     exp = True
+#     col1, col2 = st.columns(2)
+#     for i in range(0, 24, 2):
+#         if i > 2:
+#             exp = False
+#         with (col1 if i % 4 == 0 else col2):
+#             with st.expander(f"Pareja {(i+2)//2}", expanded = exp):
+#                 col3, colR[i], col5 = st.columns(3)
+#                 with col3:
+#                     ratings[i//2] = ((st.number_input(f"Jugador {i+1}", value=ratings[i//2][0]), st.number_input(f"Jugador {i+2}", value=ratings[i//2][1])))
+#                 with col5:
+#                     results[i//2] = ((st.number_input(f"Pista Inicial Parella {(i+2)//2}", min_value=1, max_value = 6, value=results[i//2][0]), st.number_input(f"Pista Final Parella {(i+2)//2}", min_value=1, max_value = 6, value=results[i//2][0])))
+
+#     # Procesamiento y Mostrar Resultados
+
+#     new_elo_team1 = update_elo_american(ratings, results, k, ratio)
+#     # Aquí iría tu lógica de procesamiento con update_elo_american() y cálculos de new_elo_team1
+#     print (len(ratings))
+#     for i in range(0,24,2):
+#         with colR[i]:
+#             st.text_input(f"Canvio elo Jugador {i+1}", str(new_elo_team1[i//2][0]), disabled=True)
+#             st.text_input(f"Canvio elo Jugador {i+1}", new_elo_team1[i//2][1], disabled=True)
+
+
 def page3():
-    st.title("Configuración de Parámetros")
-
-    with st.expander("Parámetros de Elo"):
-        ratio = st.slider("Importancia de Diferencia de Ratings", min_value=100, max_value=1000, value=800, step=50)
-        k = st.slider("Factor de Ajuste Elo", min_value=10, max_value=200, value=100, step=5)
-
-    # Sección para generar Ratings aleatorios
-    st.subheader("Generar Ratings Aleatorios")
-    with st.expander("Configuración de Ratings Aleatorios"):
-        min_rating = st.number_input("Rating Mínimo", value=1000)
-        max_rating = st.number_input("Rating Máximo", value=1500)
-    generate_button = st.button("Generar Ratings Aleatorios")
-    
-    ratings = [(1000, 1270), (1349, 1270),(1349, 1270),(1349, 1270),(1349, 1270),(1349, 1270),(1349, 1270),(1349, 1270),(1349, 1270),(1349, 1270),(1349, 1270),(1349, 1270)]
-    
-    if generate_button:
-        # Generar los pares de ratings aleatorios
-        num_pairs = 12  # Número de pares de ratings que deseas generar (6 parejas)
-        ratings = [(random.randint(min_rating, max_rating), random.randint(min_rating, max_rating)) for _ in range(num_pairs)]
-
-    # Sección de Entrada de Ratings y Resultados
-    st.subheader("Entrada de Ratings y Resultados")
-
-    
-    results = [(1, 1), (1,1), (2,2), (2,2), (3,3), (3,3), (4,4), (4,4), (5,5), (5,5), (6,6), (6,6)]
-    colR = {}
-    exp = True
-    col1, col2 = st.columns(2)
-    for i in range(0, 24, 2):
-        if i > 2:
-            exp = False
-        with (col1 if i % 4 == 0 else col2):
-            with st.expander(f"Pareja {(i+2)//2}", expanded = exp):
-                col3, colR[i], col5 = st.columns(3)
-                with col3:
-                    ratings[i//2] = ((st.number_input(f"Jugador {i+1}", value=ratings[i//2][0]), st.number_input(f"Jugador {i+2}", value=ratings[i//2][1])))
-                with col5:
-                    results[i//2] = ((st.number_input(f"Pista Inicial Parella {(i+2)//2}", min_value=1, max_value = 6, value=results[i//2][0]), st.number_input(f"Pista Final Parella {(i+2)//2}", min_value=1, max_value = 6, value=results[i//2][0])))
-
-    # Procesamiento y Mostrar Resultados
-
-    new_elo_team1 = update_elo_american(ratings, results, k, ratio)
-    # Aquí iría tu lógica de procesamiento con update_elo_american() y cálculos de new_elo_team1
-    print (len(ratings))
-    for i in range(0,24,2):
-        with colR[i]:
-            st.text_input(f"Canvio elo Jugador {i+1}", str(new_elo_team1[i//2][0]), disabled=True)
-            st.text_input(f"Canvio elo Jugador {i+1}", new_elo_team1[i//2][1], disabled=True)
-
-
-def page4():
 
     if "ratings" not in st.session_state:
         st.session_state.ratings = (1500, 1500)
+    if "results" not in st.session_state:
         st.session_state.results = (1, 1)
         
     col1, col2 = st.columns([2,1])
@@ -297,8 +269,9 @@ def page4():
         st.subheader("Configuración Parámetros")
         with st.expander("Parámetros de Elo", expanded=True):
             ratio = st.slider("Importancia de Diferencia de Ratings", min_value=100, max_value=3000, value=800, step=50)
-            k = st.slider("Factor de Ajuste Elo", min_value=10, max_value=300, value=100, step=5)
-            base = st.slider("puntuacion base", min_value=0, max_value=100, value=10, step=5)
+            k = st.slider("Factor de Ajuste Elo", min_value=10, max_value=300, value=20, step=2)
+            base = st.slider("puntuacion base", min_value=0, max_value=100, value=10, step=2)
+    
     with col1:
         st.subheader("Entrada de Ratings y Resultados")
     
@@ -307,7 +280,6 @@ def page4():
             average = st.number_input("mitjana", value=1500)
 
         generate_ratings = st.button("Ratings Aleatorios")
-
 
         ratings = [st.session_state.ratings, (average, average),(average, average),(average, average),(average, average),(average, average),(average, average),(average, average),(average, average),(average, average),(average, average),(average, average),]
         results = [st.session_state.results, (1,1), (2,2), (2,2), (3,3), (3,3), (4,4), (4,4), (5,5), (5,5), (6,6), (6,6)]
@@ -349,9 +321,7 @@ if menu == "Partido Normal":
     page1()
 elif menu == "Americana":
     page2()
-# elif menu == "Americana Sube-Baja":
-#     page3()
 elif menu == "Americana Sube-Baja":
-    page4()
+    page3()
 else:
     st.error("Opción no válida")
