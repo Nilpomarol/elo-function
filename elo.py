@@ -22,8 +22,13 @@ def update_elo_2v2(team1_ratings, team2_ratings, result, k=32, ratio=400, base=5
     team1_avg = sum(team1_ratings) / len(team1_ratings)
     team2_avg = sum(team2_ratings) / len(team2_ratings)
     
-    game_result = result[0] / sum(result)
+    # if (result[0] == 0): result[0] = 1
+    # if (result[1] == 0): result[1] = 1
     
+    # game_result = (result[0] / sum(result))*0.8 + 0.1
+    game_result = (result[0] / sum(result))*0.9+ 0.05
+    # game_result = result[0] / sum(result)
+        
     rating_diff = abs(team1_avg - team2_avg)
     
     if result[0] > result[1]:
