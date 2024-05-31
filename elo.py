@@ -4,7 +4,7 @@ import streamlit as st
 import pandas as pd
 
 
-def update_elo_2v2(team1_ratings, team2_ratings, result, k=32, ratio=400, base=50):
+def update_elo_2v2(team1_ratings, team2_ratings, result, k=32, ratio=400, base=50, factoravg = 0.5):
     """
     Calculate new Elo ratings for two teams based on the outcome of a match.
 
@@ -47,12 +47,28 @@ def update_elo_2v2(team1_ratings, team2_ratings, result, k=32, ratio=400, base=5
         P = 1 / (1 + math.pow(10, (opponent_avg - rating) / ratio))
         return int(round(factor * base + k * (game_result - P)))
     
-    team1_new_ratings = [calculate_new_rating(rating, team2_avg, game_result, team1_factor) for rating in team1_ratings]
-    team2_new_ratings = [calculate_new_rating(rating, team1_avg, 1 - game_result, team2_factor) for rating in team2_ratings]
+    team1_new_ratings = []
+    for i in range(len(team1_ratings)):
+        if i == 0:
+            weightedavg = team1_ratings[i] * factoravg + team1_ratings[i+1] * (1-factoravg)
+        else:
+            weightedavg = team1_ratings[i] * factoravg + team1_ratings[i-1] * (1-factoravg)
+
+        new_rating = calculate_new_rating(weightedavg, team2_avg, game_result, team1_factor)
+        team1_new_ratings.append(new_rating)
+    
+    team2_new_ratings = []
+    for i in range(len(team2_ratings)):
+        if i == 0:
+            weightedavg = team2_ratings[i] * factoravg + team2_ratings[i+1] * (1-factoravg)
+        else:
+            weightedavg = team2_ratings[i] * factoravg + team2_ratings[i-1] * (1-factoravg)
+        new_rating = calculate_new_rating(weightedavg, team1_avg, 1 - game_result, team2_factor)
+        team2_new_ratings.append(new_rating)
     
     return team1_new_ratings, team2_new_ratings
    
-def update_elo_american(ratings, results, multipistes, compensacio, k=20, ratio = 800,numpistas = 6, base = 10, ):
+def update_elo_american(ratings, results, multipistes, compensacio, k=20, ratio = 800,numpistas = 6, base = 10, factoravg = 0.5):
     # Calcula los nuevos puntajes Elo de los jugadores
     new_ratings = []
     avg = 0
@@ -87,8 +103,13 @@ def update_elo_american(ratings, results, multipistes, compensacio, k=20, ratio 
         
         new_ratings_pareja = []
         
-        for jugador in ratings[i]:
-            P = 1/ (1 + math.pow(10, (avg - jugador) / ratio))
+        for j in range(len(ratings[i])):
+            if j == 0:
+                weightedavg = ratings[i][j] * factoravg + ratings[i][j+1] * (1-factoravg)
+            else:
+                weightedavg = ratings[i][j] * factoravg + ratings[i][j-1] * (1-factoravg)
+
+            P = 1/ (1 + math.pow(10, (avg - weightedavg) / ratio))
             new_elo = int(round(factor * base + k * (americana_result - P)))
 
             new_elo += ajuste
@@ -96,6 +117,7 @@ def update_elo_american(ratings, results, multipistes, compensacio, k=20, ratio 
             
         new_ratings.append((new_ratings_pareja[0],new_ratings_pareja[1]))
         i += 1
+        first = False
 
 
     return new_ratings
@@ -113,6 +135,7 @@ def page1():
             ratio = st.slider("Importancia de Diferencia de Ratings (Ratio)", min_value=100, max_value=2000, value=400, step=50)
             k = st.slider("Factor de Ajuste Elo (k)", min_value=0, max_value=100, value=20, step=2)
             base = st.slider("Valor Base (Base)", min_value=0, max_value=100, value=50, step=1)
+            factoravg = st.slider("Peso media pareja", min_value=0, max_value=100, value=70, step=1)
 
     if "ratings" not in st.session_state:
         st.session_state["ratings"] = [1200, 1210, 1220, 1230]
@@ -139,6 +162,8 @@ def page1():
             - **k**: Controla la velocidad de ajuste del rating Elo. Un valor más alto significa ajustes más rápidos.
         
             - **Base**: Ajuste adicional que puede influir en el cambio de rating, especialmente cuando hay grandes diferencias de rating entre equipos.
+                     
+            - **Peso media pareja**: Factor que pondera el rating de los jugadores en función de la pareja. Un valor más alto significa que el rating del jugador se basa más en su propio rating que en el de su compañero. Un valor de 50, equivale a una media normal.
             """)
 
         col3, col4 = st.columns(2)
@@ -152,7 +177,7 @@ def page1():
         result_input = st.text_input("Resultado: ", f"{st.session_state['result'][0]}-{st.session_state['result'][1]}")
         st.session_state["result"] = list(map(int, result_input.split("-")))
 
-        new_elo_team1, new_elo_team2 = update_elo_2v2(team1_elo, team2_elo, st.session_state["result"], k, ratio, base)
+        new_elo_team1, new_elo_team2 = update_elo_2v2(team1_elo, team2_elo, st.session_state["result"], k, ratio, base, factoravg/100)
 
         data = {
             "Jugador": ["Jugador 1", "Jugador 2", "Jugador 3", "Jugador 4"],
@@ -174,6 +199,7 @@ def page2():
             ratio = st.slider("Importancia de Diferencia de Ratings (Ratio)", min_value=100, max_value=2000, value=400, step=50)
             k = st.slider("Factor de Ajuste Elo (k)", min_value=0, max_value=100, value=20, step=2)
             base = st.slider("Valor Base (Base)", min_value=0, max_value=100, value=20, step=1)
+            factoravg = st.slider("Peso media pareja", min_value=0, max_value=100, value=70, step=1)
             
     if "ratings" not in st.session_state:
         st.session_state["ratings"] = [1200, 1210, 1220, 1230]
@@ -200,6 +226,8 @@ def page2():
             - **k**: Controla la velocidad de ajuste del rating Elo. Un valor más alto significa ajustes más rápidos.
         
             - **Base**: Ajuste adicional que puede influir en el cambio de rating, especialmente cuando hay grandes diferencias de rating entre equipos.
+                     
+            - **Peso media pareja**: Factor que pondera el rating de los jugadores en función de la pareja. Un valor más alto significa que el rating del jugador se basa más en su propio rating que en el de su compañero. Un valor de 50, equivale a una media normal.
             """)
         col3, col4 = st.columns(2)
         with col3:
@@ -212,7 +240,7 @@ def page2():
         result_input = st.text_input("Resultado: ", f"{st.session_state['result'][0]}-{st.session_state['result'][1]}")
         st.session_state["result"] = list(map(int, result_input.split("-")))
 
-        new_elo_team1, new_elo_team2 = update_elo_2v2(team1_elo, team2_elo, st.session_state["result"], k, ratio, base)
+        new_elo_team1, new_elo_team2 = update_elo_2v2(team1_elo, team2_elo, st.session_state["result"], k, ratio, base, factoravg/100)
 
         data = {
             "Jugador": ["Jugador 1", "Jugador 2", "Jugador 3", "Jugador 4"],
@@ -291,6 +319,7 @@ def page3():
                 - **Puntuación Base:** Añade una cantidad fija al ajuste de Elo en cada partida.
                 - **Multiplicador de Pistas en %:** Ajusta el impacto de la diferencia de pistas ganadas o perdidas en el cálculo del Elo. Se aplica sobre la puntuacion base. Si se suben 5 pistas se ganara (4 * multiplcador * base) como valor base.
                 - **Compensación:** Ajusta el Elo de los jugadores que empiezan en la pista 1/2 y terminan en la 1 y de los jugadores que empiezan en la 5/6 y terminan en la 6.
+                - **Peso media pareja:** Factor que pondera el rating de los jugadores en función de la pareja. Un valor más alto significa que el rating del jugador se basa más en su propio rating que en el de su compañero. un valor de 50, equivale a una media normal.
             """)
     col1, col2 = st.columns([2,1])
     with col2:
@@ -301,6 +330,7 @@ def page3():
             base = st.slider("puntuacion base", min_value=0, max_value=100, value=20, step=1)
             multpistes = st.slider("Multiplicador de pistas en %", min_value=0, max_value=100, value=20, step=1)
             compensacio = st.slider("Compensación", min_value=0, max_value=100, value=0, step=1)
+            factoravg = st.slider("Peso media pareja", min_value=0, max_value=100, value=70, step=1)
     
     with col1:
         st.subheader("Configuración de parametros aleatorios")
@@ -329,7 +359,7 @@ def page3():
         with col4:
             results[0] = (st.number_input("Pista Inicial: ", min_value=1, max_value = 6, value=results[0][0]), st.number_input("Pista Final: ", min_value=1, max_value = 6, value=results[0][1]))
             
-        new_elo_team1 = update_elo_american(ratings, results, multpistes, compensacio, k = k, ratio = ratio, base = base)
+        new_elo_team1 = update_elo_american(ratings, results, multpistes, compensacio, k = k, ratio = ratio, base = base, factoravg = factoravg/100)
 
     with col5:
         st.write("Resultados:")
