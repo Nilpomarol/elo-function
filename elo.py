@@ -68,7 +68,7 @@ def update_elo_2v2(team1_ratings, team2_ratings, result, k=32, ratio=400, base=5
     
     return team1_new_ratings, team2_new_ratings
    
-def update_elo_american(ratings, results, multipistes, compensacio, compensacio2, k=20, ratio = 800,numpistas = 6, base = 10, factoravg = 0.5):
+def update_elo_american(ratings, results, multipistes, compensacio, compensacio2, bonificacion, k=20, ratio = 800,numpistas = 6, base = 10, factoravg = 0.5):
     # Calcula los nuevos puntajes Elo de los jugadores
     new_ratings = []
     avg = 0
@@ -100,8 +100,7 @@ def update_elo_american(ratings, results, multipistes, compensacio, compensacio2
         elif ((pistainicial == 5 or pistainicial == 6) and pistafinal == 6):
             ajuste = -compensacio
         
-
-
+        
         
         new_ratings_pareja = []
         
@@ -114,7 +113,19 @@ def update_elo_american(ratings, results, multipistes, compensacio, compensacio2
             P = 1/ (1 + math.pow(10, (avg - weightedavg) / ratio))
             new_elo = int(round(factor * base + k * (americana_result - P)))
 
-            new_elo += ajuste
+            diff = weightedavg - avg
+
+            if compensacio2 != 0:
+                if pistafinal == 6:
+                    ajuste -= compensacio2 * (1+(abs(diff)//200)/10 if diff > 0 else 1)
+                elif pistafinal == 5:
+                    ajuste -= compensacio2*0.5
+                elif pistafinal == 1:
+                    ajuste += bonificacion * (1+(abs(diff)//200)/10 if diff < 0 else 1)
+                elif pistafinal == 2:
+                    ajuste += bonificacion*0.5
+
+            new_elo += round(ajuste)
             new_ratings_pareja.append(new_elo)
             
         new_ratings.append((new_ratings_pareja[0],new_ratings_pareja[1]))
@@ -302,6 +313,8 @@ def page3():
             - **Puntuación Base:** Añade una cantidad fija al ajuste de Elo en cada partida.
             - **Multiplicador de Pistas en %:** Ajusta el impacto de la diferencia de pistas ganadas o perdidas en el cálculo del Elo. Se aplica sobre la puntuación base. Si se suben 5 pistas se ganará (4 * multiplicador * base) como valor base.
             - **Compensación:** Ajusta el Elo de los jugadores que empiezan en la pista 1/2 y terminan en la 1 y de los jugadores que empiezan en la 5/6 y terminan en la 6.
+            - **penalizacion 5/6:** Aplica una esta penalización por terminar en la pista 6 y la mitad por terminal en la pista 5. La penalizacion se ve aumentada en caso de que la mendia ponderada del jugador sea peor que la media.
+            - **bonificacion 1/2:** Aplica una bonificación por terminar en la pista 1 y la mitad por terminal en la pista 2. La bonificación se ve aumentada en caso de que la mendia ponderada del jugador sea mejor que la media.
             - **Peso media pareja:** Factor que pondera el rating de los jugadores en función de la pareja. Un valor más alto significa que el rating del jugador se basa más en su propio rating que en el de su compañero. Un valor de 50 equivale a una media normal.
         """)
 
@@ -317,11 +330,13 @@ def page3():
             ratio = st.slider("Importancia de Diferencia de Ratings", min_value=100, max_value=3000, value=600, step=20)
             k = st.slider("Factor de Ajuste Elo", min_value=10, max_value=300, value=32, step=1)
             base = st.slider("Puntuación Base", min_value=0, max_value=100, value=20, step=1)
+            penalizacion = st.slider("Penalizacion 5/6", min_value=0, max_value=100, value=10, step=1)
             
         with col2:
             multpistes = st.slider("Multiplicador de Pistas en %", min_value=0, max_value=100, value=20, step=1)
             compensacio = st.slider("Compensación", min_value=0, max_value=100, value=0, step=1)
             factoravg = st.slider("Peso Media Pareja", min_value=0, max_value=100, value=70, step=1)
+            bonificacion = st.slider("Bonificacion 1/2", min_value=0, max_value=100, value=0, step=1)
     
     generate_ratings = st.button("Ratings Aleatorios")
 
@@ -390,7 +405,7 @@ def page3():
                     st.number_input(f"Pista Final Pareja {i}", key=f"result_FIN_{i}", min_value=1, max_value=6, step=1, 
                                     on_change=lambda key=f"result_FIN_{i}", index=i, isSecond=True: update_ratingsComplets(key, index, isSecond, False))
 
-    new_elo_team1 = update_elo_american(loads(st.session_state.ratingsComplets), loads(st.session_state.resultsComplets), multpistes, compensacio, 0, k = k, ratio = ratio, base = base, factoravg = factoravg/100)
+    new_elo_team1 = update_elo_american(loads(st.session_state.ratingsComplets), loads(st.session_state.resultsComplets), multpistes, compensacio, penalizacion, bonificacion, k = k, ratio = ratio, base = base, factoravg = factoravg/100)
     
     for i in range(12):
         with colR[i]:
@@ -420,6 +435,8 @@ def page4():
                 - **Puntuación Base:** Añade una cantidad fija al ajuste de Elo en cada partida.
                 - **Multiplicador de Pistas en %:** Ajusta el impacto de la diferencia de pistas ganadas o perdidas en el cálculo del Elo. Se aplica sobre la puntuacion base. Si se suben 5 pistas se ganara (4 * multiplcador * base) como valor base.
                 - **Compensación:** Ajusta el Elo de los jugadores que empiezan en la pista 1/2 y terminan en la 1 y de los jugadores que empiezan en la 5/6 y terminan en la 6.
+                - **penalizacion 5/6:** Aplica una esta penalización por terminar en la pista 6 y la mitad por terminal en la pista 5. La penalizacion se ve aumentada en caso de que la mendia ponderada del jugador sea peor que la media.
+                - **bonificacion 1/2:** Aplica una bonificación por terminar en la pista 1 y la mitad por terminal en la pista 2. La bonificación se ve aumentada en caso de que la mendia ponderada del jugador sea mejor que la media.
                 - **Peso media pareja:** Factor que pondera el rating de los jugadores en función de la pareja. Un valor más alto significa que el rating del jugador se basa más en su propio rating que en el de su compañero. un valor de 50, equivale a una media normal.
             """)
     col1, col2 = st.columns([2,1])
@@ -428,10 +445,12 @@ def page4():
         with st.expander(r"$\textsf{\Large Parametros de Elo}$", expanded=True):
             ratio = st.slider("Importancia de Diferencia de Ratings", min_value=100, max_value=3000, value=600, step=20)
             k = st.slider("Factor de Ajuste Elo", min_value=10, max_value=300, value=32, step=1)
-            base = st.slider("puntuacion base", min_value=0, max_value=100, value=20, step=1)
+            base = st.slider("puntuacion base", min_value=0, max_value=100, value=15, step=1)
             multpistes = st.slider("Multiplicador de pistas en %", min_value=0, max_value=100, value=20, step=1)
             compensacio = st.slider("Compensación", min_value=0, max_value=100, value=0, step=1)
             factoravg = st.slider("Peso media pareja", min_value=0, max_value=100, value=70, step=1)
+            penalizacion = st.slider("Penalizacion 5/6", min_value=0, max_value=100, value=10, step=1)
+            bonificacion = st.slider("Bonificacion 1/2", min_value=0, max_value=100, value=0, step=1)
     
     with col1:
         st.subheader("Configuración de parametros aleatorios")
@@ -460,7 +479,7 @@ def page4():
         with col4:
             results[0] = (st.number_input("Pista Inicial: ", min_value=1, max_value = 6, value=results[0][0]), st.number_input("Pista Final: ", min_value=1, max_value = 6, value=results[0][1]))
             
-        new_elo_team1 = update_elo_american(ratings, results, multpistes, compensacio, 0,k = k, ratio = ratio, base = base, factoravg = factoravg/100)
+        new_elo_team1 = update_elo_american(ratings, results, multpistes, compensacio, penalizacion, bonificacion, k = k, ratio = ratio, base = base, factoravg = factoravg/100)
 
     with col5:
         st.write("Resultados:")
