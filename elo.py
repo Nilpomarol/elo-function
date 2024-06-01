@@ -2,7 +2,7 @@ import math
 import random
 import streamlit as st
 import pandas as pd
-
+from pickle import dumps, loads
 
 def update_elo_2v2(team1_ratings, team2_ratings, result, k=32, ratio=400, base=50, factoravg = 0.5):
     """
@@ -68,7 +68,7 @@ def update_elo_2v2(team1_ratings, team2_ratings, result, k=32, ratio=400, base=5
     
     return team1_new_ratings, team2_new_ratings
    
-def update_elo_american(ratings, results, multipistes, compensacio, k=20, ratio = 800,numpistas = 6, base = 10, factoravg = 0.5):
+def update_elo_american(ratings, results, multipistes, compensacio, compensacio2, k=20, ratio = 800,numpistas = 6, base = 10, factoravg = 0.5):
     # Calcula los nuevos puntajes Elo de los jugadores
     new_ratings = []
     avg = 0
@@ -100,6 +100,8 @@ def update_elo_american(ratings, results, multipistes, compensacio, k=20, ratio 
         elif ((pistainicial == 5 or pistainicial == 6) and pistafinal == 6):
             ajuste = -compensacio
         
+
+
         
         new_ratings_pareja = []
         
@@ -251,16 +253,47 @@ def page2():
 
         df = pd.DataFrame(data)
         st.table(df)
-       
+
+def update_ratingsComplets(key, index, isSecond, ratings):
+    if isSecond:
+        index += 1
+    value = st.session_state[key]
+    
+    if ratings:
+        if not isSecond:
+            newRating = (value, loads(st.session_state.ratingsComplets)[index][1])
+        else:
+            newRating = (loads(st.session_state.ratingsComplets)[index][0], value)
+        aux = loads(st.session_state.ratingsComplets)
+        aux[index] = newRating
+        st.session_state.ratingsComplets = dumps(aux)
+    else:
+        if not isSecond:
+            newResult = (value, loads(st.session_state.resultsComplets)[index][1])
+        else:
+            newResult = (loads(st.session_state.resultsComplets)[index][0], value)
+        aux = loads(st.session_state.resultsComplets)
+        aux[index] = newResult
+        st.session_state.resultsComplets = dumps(aux)    
+
 def page3():
     st.header("Calculadora de Puntajes Elo Partidos Americana Sube-Baja")
     st.write("")
     st.write("")
 
     if "ratingsComplets" not in st.session_state:
-        st.session_state.ratingsComplets = [(1000, 1000)] * 12
+        ratingsComplets = [(1000, 1000)] * 12
+        st.session_state.ratingsComplets = dumps(ratingsComplets)
+
     if "resultsComplets" not in st.session_state:
-        st.session_state.resultsComplets = [(1, 1), (1, 1), (2, 2), (2, 2), (3, 3), (3, 3), (4, 4), (4, 4), (5, 5), (5, 5), (6, 6), (6, 6)]
+        resultsComplets = [(1, 1), (1, 1), (2, 2), (2, 2), (3, 3), (3, 3), (4, 4), (4, 4), (5, 5), (5, 5), (6, 6), (6, 6)]
+        st.session_state.resultsComplets = dumps(resultsComplets)
+
+    for i in range(0, 12):
+        st.session_state[f"rating_{i*2}"] = loads(st.session_state.ratingsComplets)[i][0]
+        st.session_state[f"rating_{i*2+1}"] = loads(st.session_state.ratingsComplets)[i][1]
+        st.session_state[f"result_INI_{i}"] = loads(st.session_state.resultsComplets)[i][0]
+        st.session_state[f"result_FIN_{i}"] = loads(st.session_state.resultsComplets)[i][1]
 
     with st.expander(r"$\textsf{\Large Explicacion de parametros}$", expanded=True):
         st.markdown("""
@@ -276,6 +309,7 @@ def page3():
     with st.expander(r"$\textsf{\Large Configuración de Ratings Aleatorios}$", expanded=True):
         variability = st.number_input("Variabilidad respecto a la media", value=200)
         average = st.number_input("Media", value=1500)
+
     st.subheader("Configuración Parámetros")
     with st.expander(r"$\textsf{\Large Parametros de Elo}$", expanded=True):
         col1, col2 = st.columns([1, 1])
@@ -289,64 +323,85 @@ def page3():
             compensacio = st.slider("Compensación", min_value=0, max_value=100, value=0, step=1)
             factoravg = st.slider("Peso Media Pareja", min_value=0, max_value=100, value=70, step=1)
     
-    
     generate_ratings = st.button("Ratings Aleatorios")
 
     if generate_ratings:
         num_pairs = 12
-        st.session_state.ratingsComplets = [(random.randint(average - variability, average + variability), 
-                                             random.randint(average - variability, average + variability)) for _ in range(num_pairs)]
-        st.session_state.resultsComplets = []
+        st.session_state.ratingsComplets = dumps([(random.randint(average - variability, average + variability), 
+                                                   random.randint(average - variability, average + variability)) for _ in range(num_pairs)])
+        aux = []
         pistasInicials = {}
         pistasFinals = {}
         
         for i in range(0, num_pairs):
-            pIni = random.randint(1,6)
+            pIni = random.randint(1, 6)
             while (pIni in pistasInicials and pistasInicials[pIni] >= 2):
-                pIni = random.randint(1,6)
+                pIni = random.randint(1, 6)
             pistasInicials[pIni] = pistasInicials.get(pIni, 0) + 1
-            pFin = random.randint(1,6)
+            pFin = random.randint(1, 6)
             while (pFin in pistasFinals and pistasFinals[pFin] >= 2):
-                pFin = random.randint(1,6)
+                pFin = random.randint(1, 6)
             pistasFinals[pFin] = pistasFinals.get(pFin, 0) + 1
+            aux.append((pIni, pFin))
 
-            st.session_state.resultsComplets.append((pIni, pFin))
+        for i in range(12):
+            st.session_state[f"rating_{i*2}"] = loads(st.session_state.ratingsComplets)[i][0]
+            st.session_state[f"rating_{i*2+1}"] = loads(st.session_state.ratingsComplets)[i][1]
+            st.session_state[f"result_INI_{i}"] = aux[i][0]
+            st.session_state[f"result_FIN_{i}"] = aux[i][1]
+        st.session_state.resultsComplets = dumps(aux)
 
-
-
-
-    cola, colb = st.columns([1,1])
+    cola, colb = st.columns([1, 1])
     with cola: 
         st.subheader("Entrada de Ratings y Resultados")
     with colb:
-        #caluclar media de los ratings
-        avg = 0
-        for pareja in st.session_state.ratingsComplets:
-            avg += pareja[0] + pareja[1]
-        avg = avg / (len(st.session_state.ratingsComplets)*2)
-        st.subheader(f"Media de los ratings: {round(avg)}")
+        avg = sum([sum(pair) for pair in loads(st.session_state.ratingsComplets)]) / (len(loads(st.session_state.ratingsComplets)) * 2)
+        st.subheader(f"Media del pozo: {round(avg)}")
 
     colR = {}
     col1, col2 = st.columns(2)
-    for i in range(0, 24, 2):
-        with (col1 if i % 4 == 0 else col2):
-            with st.expander(f"Pareja {(i + 2) // 2}", expanded=True):
+    with col1:
+        for i in range(0, 12, 2):
+            with st.expander(f"pareja {i}", expanded=True):
                 col3, colR[i], col5 = st.columns(3)
                 with col3:
-                    st.session_state.ratingsComplets[i // 2] = (
-                        st.number_input(f"Jugador {i + 1}", value=st.session_state.ratingsComplets[i // 2][0]), 
-                        st.number_input(f"Jugador {i + 2}", value=st.session_state.ratingsComplets[i // 2][1]))
+                    st.number_input(f"Jugador {i*2}", key=f"rating_{i*2}", step=1, 
+                                    on_change=lambda key=f"rating_{i*2}", index=i, isSecond=False: update_ratingsComplets(key, index, isSecond, True))
+                    st.number_input(f"Jugador {i*2+1}", key=f"rating_{i*2+1}", step=1, 
+                                    on_change=lambda key=f"rating_{i*2+1}", index=i, isSecond=True: update_ratingsComplets(key, index, isSecond, True))
                 with col5:
-                    st.session_state.resultsComplets[i // 2] = (
-                        st.number_input(f"Pista Inicial Pareja {(i + 2) // 2}", min_value=1, max_value=6, value=st.session_state.resultsComplets[i // 2][0]), 
-                        st.number_input(f"Pista Final Pareja {(i + 2) // 2}", min_value=1, max_value=6, value=st.session_state.resultsComplets[i // 2][1]))
-
-    new_elo_team1 = update_elo_american(st.session_state.ratingsComplets, st.session_state.resultsComplets, multpistes, compensacio, k = k, ratio = ratio, base = base, factoravg = factoravg/100)
+                    st.number_input(f"Pista Inicial Pareja {i}", key=f"result_INI_{i}", min_value=1, max_value=6, step=1, 
+                                    on_change=lambda key=f"result_INI_{i}", index=i, isSecond=False: update_ratingsComplets(key, index, isSecond, False))
+                    st.number_input(f"Pista Final Pareja {i}", key=f"result_FIN_{i}", min_value=1, max_value=6, step=1, 
+                                    on_change=lambda key=f"result_FIN_{i}", index=i, isSecond=True: update_ratingsComplets(key, index, isSecond, False))
     
-    for i in range(0, 24, 2):
+    with col2:
+        for i in range(1, 12, 2):
+            with st.expander(f"pareja {i}", expanded=True):
+                col3, colR[i], col5 = st.columns(3)
+                with col3:
+                    st.number_input(f"Jugador {i*2}", key=f"rating_{i*2}", step=1, 
+                                    on_change=lambda key=f"rating_{i*2}", index=i, isSecond=False: update_ratingsComplets(key, index, isSecond, True))
+                    st.number_input(f"Jugador {i*2+1}", key=f"rating_{i*2+1}", step=1, 
+                                    on_change=lambda key=f"rating_{i*2+1}", index=i, isSecond=True: update_ratingsComplets(key, index, isSecond, True))
+                with col5:
+                    st.number_input(f"Pista Inicial Pareja {i}", key=f"result_INI_{i}", min_value=1, max_value=6, step=1, 
+                                    on_change=lambda key=f"result_INI_{i}", index=i, isSecond=False: update_ratingsComplets(key, index, isSecond, False))
+                    st.number_input(f"Pista Final Pareja {i}", key=f"result_FIN_{i}", min_value=1, max_value=6, step=1, 
+                                    on_change=lambda key=f"result_FIN_{i}", index=i, isSecond=True: update_ratingsComplets(key, index, isSecond, False))
+
+    new_elo_team1 = update_elo_american(loads(st.session_state.ratingsComplets), loads(st.session_state.resultsComplets), multpistes, compensacio, 0, k = k, ratio = ratio, base = base, factoravg = factoravg/100)
+    
+    for i in range(12):
         with colR[i]:
-            st.text_input(f"Cambio Elo Jugador {i + 1}", str(new_elo_team1[i // 2][0]), disabled=True)
-            st.text_input(f"Cambio Elo Jugador {i + 2}", str(new_elo_team1[i // 2][1]), disabled=True)
+            st.text_input(f"Cambio Elo Jugador {i*2}", str(new_elo_team1[i][0]), disabled=True)
+            st.text_input(f"Cambio Elo Jugador {i*2+1}", str(new_elo_team1[i][1]), disabled=True)
+
+
+
+    st.write("")
+    st.write("")
+
 
 
 def page4():
@@ -405,7 +460,7 @@ def page4():
         with col4:
             results[0] = (st.number_input("Pista Inicial: ", min_value=1, max_value = 6, value=results[0][0]), st.number_input("Pista Final: ", min_value=1, max_value = 6, value=results[0][1]))
             
-        new_elo_team1 = update_elo_american(ratings, results, multpistes, compensacio, k = k, ratio = ratio, base = base, factoravg = factoravg/100)
+        new_elo_team1 = update_elo_american(ratings, results, multpistes, compensacio, 0,k = k, ratio = ratio, base = base, factoravg = factoravg/100)
 
     with col5:
         st.write("Resultados:")
