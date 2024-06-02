@@ -94,11 +94,11 @@ def update_elo_american(ratings, results, multipistes, compensacio, compensacio2
         
         americana_result = (gained / numpistas)/2+0.5
         
-        ajuste = 0
+        preajuste = 0
         if ((pistainicial == 1 or pistainicial == 2) and pistafinal == 1):
-            ajuste = compensacio
+            preajuste = compensacio
         elif ((pistainicial == 5 or pistainicial == 6) and pistafinal == 6):
-            ajuste = -compensacio
+            preajuste = -compensacio
         
         
         
@@ -110,9 +110,12 @@ def update_elo_american(ratings, results, multipistes, compensacio, compensacio2
             else:
                 weightedavg = ratings[i][j] * factoravg + ratings[i][j-1] * (1-factoravg)
 
+
             P = 1/ (1 + math.pow(10, (avg - weightedavg) / ratio))
             new_elo = int(round(factor * base + k * (americana_result - P)))
 
+
+            ajuste = preajuste
             diff = weightedavg - avg
 
             if compensacio2 != 0:
@@ -124,6 +127,7 @@ def update_elo_american(ratings, results, multipistes, compensacio, compensacio2
                     ajuste += bonificacion * (1+(abs(diff)//200)/10 if diff < 0 else 1)
                 elif pistafinal == 2:
                     ajuste += bonificacion*0.5
+
 
             new_elo += round(ajuste)
             new_ratings_pareja.append(new_elo)
@@ -264,10 +268,9 @@ def page2():
 
         df = pd.DataFrame(data)
         st.table(df)
-
+        
 def update_ratingsComplets(key, index, isSecond, ratings):
-    if isSecond:
-        index += 1
+
     value = st.session_state[key]
     
     if ratings:
@@ -366,12 +369,12 @@ def page3():
             st.session_state[f"result_FIN_{i}"] = aux[i][1]
         st.session_state.resultsComplets = dumps(aux)
 
-    cola, colb = st.columns([1, 1])
-    with cola: 
-        st.subheader("Entrada de Ratings y Resultados")
-    with colb:
-        avg = sum([sum(pair) for pair in loads(st.session_state.ratingsComplets)]) / (len(loads(st.session_state.ratingsComplets)) * 2)
-        st.subheader(f"Media del pozo: {round(avg)}")
+
+
+    st.subheader("Entrada de Ratings y Resultados")
+
+    avg = sum([sum(pair) for pair in loads(st.session_state.ratingsComplets)]) / (len(loads(st.session_state.ratingsComplets)) * 2)
+    st.subheader(f"Media del pozo: {round(avg)}")
 
     colR = {}
     col1, col2 = st.columns(2)
@@ -381,14 +384,14 @@ def page3():
                 col3, colR[i], col5 = st.columns(3)
                 with col3:
                     st.number_input(f"Jugador {i*2}", key=f"rating_{i*2}", step=1, 
-                                    on_change=lambda key=f"rating_{i*2}", index=i, isSecond=False: update_ratingsComplets(key, index, isSecond, True))
+                                    on_change=update_ratingsComplets, args=(f"rating_{i*2}", i, False, True))
                     st.number_input(f"Jugador {i*2+1}", key=f"rating_{i*2+1}", step=1, 
-                                    on_change=lambda key=f"rating_{i*2+1}", index=i, isSecond=True: update_ratingsComplets(key, index, isSecond, True))
+                                    on_change=update_ratingsComplets, args=(f"rating_{i*2+1}", i, True, True))
                 with col5:
                     st.number_input(f"Pista Inicial Pareja {i}", key=f"result_INI_{i}", min_value=1, max_value=6, step=1, 
-                                    on_change=lambda key=f"result_INI_{i}", index=i, isSecond=False: update_ratingsComplets(key, index, isSecond, False))
+                                    on_change=update_ratingsComplets, args=(f"result_INI_{i}", i, False, False))
                     st.number_input(f"Pista Final Pareja {i}", key=f"result_FIN_{i}", min_value=1, max_value=6, step=1, 
-                                    on_change=lambda key=f"result_FIN_{i}", index=i, isSecond=True: update_ratingsComplets(key, index, isSecond, False))
+                                    on_change=update_ratingsComplets, args=(f"result_FIN_{i}", i, True, False))
     
     with col2:
         for i in range(1, 12, 2):
@@ -396,21 +399,25 @@ def page3():
                 col3, colR[i], col5 = st.columns(3)
                 with col3:
                     st.number_input(f"Jugador {i*2}", key=f"rating_{i*2}", step=1, 
-                                    on_change=lambda key=f"rating_{i*2}", index=i, isSecond=False: update_ratingsComplets(key, index, isSecond, True))
+                                    on_change=update_ratingsComplets, args=(f"rating_{i*2}", i, False, True))
                     st.number_input(f"Jugador {i*2+1}", key=f"rating_{i*2+1}", step=1, 
-                                    on_change=lambda key=f"rating_{i*2+1}", index=i, isSecond=True: update_ratingsComplets(key, index, isSecond, True))
+                                    on_change=update_ratingsComplets, args=(f"rating_{i*2+1}", i, True, True))
                 with col5:
                     st.number_input(f"Pista Inicial Pareja {i}", key=f"result_INI_{i}", min_value=1, max_value=6, step=1, 
-                                    on_change=lambda key=f"result_INI_{i}", index=i, isSecond=False: update_ratingsComplets(key, index, isSecond, False))
+                                    on_change=update_ratingsComplets, args=(f"result_INI_{i}", i, False, False))
                     st.number_input(f"Pista Final Pareja {i}", key=f"result_FIN_{i}", min_value=1, max_value=6, step=1, 
-                                    on_change=lambda key=f"result_FIN_{i}", index=i, isSecond=True: update_ratingsComplets(key, index, isSecond, False))
+                                    on_change=update_ratingsComplets, args=(f"result_FIN_{i}", i, True, False))
 
-    new_elo_team1 = update_elo_american(loads(st.session_state.ratingsComplets), loads(st.session_state.resultsComplets), multpistes, compensacio, penalizacion, bonificacion, k = k, ratio = ratio, base = base, factoravg = factoravg/100)
-    
+
+    new_elo_team1 = update_elo_american(loads(st.session_state.ratingsComplets),  loads(st.session_state.resultsComplets), multpistes, compensacio, penalizacion, bonificacion, k = k, ratio = ratio, base = base, factoravg = factoravg/100)
+
+
+
     for i in range(12):
         with colR[i]:
             st.text_input(f"Cambio Elo Jugador {i*2}", str(new_elo_team1[i][0]), disabled=True)
             st.text_input(f"Cambio Elo Jugador {i*2+1}", str(new_elo_team1[i][1]), disabled=True)
+
 
 
 
@@ -466,13 +473,20 @@ def page4():
 
         if generate_ratings == True:
             randratings = (random.randint(average-variability, average+variability), random.randint(average-variability, average+variability))
-            ratings[0] = randratings
             st.session_state.ratings = randratings
+            ratings[0] = st.session_state.ratings
             result = (random.randint(1,6), random.randint(1,6))
-            results[0] = result
             st.session_state.results = result
-       
+            results[0] = st.session_state.results
+
         st.subheader("Entrada de Ratings y Resultados")
+
+        #avg
+        avg = 0
+        for pareja in ratings:
+            avg += pareja[0] + pareja[1]
+        avg = avg / (len(ratings)*2)
+        st.subheader(f"Media del pozo real: {round(avg)}") 
         col3, col4, col5 = st.columns([5,5,6])
         with col3:
             ratings[0] = (st.number_input("Jugador 1: ", value=ratings[0][0]), st.number_input("Jugador 2: ", value=ratings[0][1]))
