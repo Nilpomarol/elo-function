@@ -19,7 +19,7 @@ def update_elo_2v2(team1_ratings, team2_ratings, result, k=32, ratio=400, base=5
         Ejemplo: 32
     - ratio (int, optional): Valor del ratio utilizado en la fórmula para calcular la probabilidad esperada. Por defecto es 400.
         Ejemplo: 400
-    - base (int, optional): Base inicial para ajustar las puntuaciones Elo. Por defecto es 50.
+    - base (int, optional): Base inicial para ajustar las puntuaciones Elo. Por defecto es 50, en partidos normales. Se deberia cambiar a 20 por partidos de        americanas.
         Ejemplo: 50
     - factoravg (float, optional): Factor utilizado para calcular el promedio ponderado de las puntuaciones del equipo. 
       Por defecto es 0.5.
