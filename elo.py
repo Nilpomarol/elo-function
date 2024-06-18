@@ -1,33 +1,38 @@
 import math
-import random
-import streamlit as st
-import pandas as pd
-from pickle import dumps, loads
+
 
 def update_elo_2v2(team1_ratings, team2_ratings, result, k=32, ratio=400, base=50, factoravg = 0.5):
     """
-    Calculate new Elo ratings for two teams based on the outcome of a match.
+    Actualiza las puntuaciones Elo de dos equipos después de un partido.
 
-    Args:
-        team1_ratings (list): List of integers representing the Elo ratings of the first team's players.
-        team2_ratings (list): List of integers representing the Elo ratings of the second team's players.
-        result (list): List of two integers representing the scores of team 1 and team 2, respectively.
-        k (int, optional): The maximum possible adjustment per player per game. Defaults to 32.
-        ratio (int, optional): Used to scale the difference in ratings. Defaults to 400.
-        base (int, optional): A base adjustment factor that can be modified based on the rating difference. Defaults to 50.
+    Parámetros:
+    - team1_ratings (list of ints): Lista de las puntuaciones Elo de los jugadores del primer equipo. 
+      Debe contener exactamente dos elementos, que son los ratings de la primera pareja.
+        Ejemplo: [1500, 1600]
+    - team2_ratings (list of ints): Lista de las puntuaciones Elo de los jugadores del segundo equipo. 
+      Debe contener exactamente dos elementos, que son los ratings de la segunda pareja.
+        Ejemplo: [1550, 1650]
+    - result (list of ints): Lista que contiene el resultado del partido. El primer elemento representa la puntuación 
+      del equipo 1 y el segundo elemento representa la puntuación del equipo 2.
+        Ejemplo: [1, 0]
+    - k (int, optional): Constante K utilizada en la fórmula de actualización del Elo. Por defecto es 32.
+        Ejemplo: 32
+    - ratio (int, optional): Valor del ratio utilizado en la fórmula para calcular la probabilidad esperada. Por defecto es 400.
+        Ejemplo: 400
+    - base (int, optional): Base inicial para ajustar las puntuaciones Elo. Por defecto es 50.
+        Ejemplo: 50
+    - factoravg (float, optional): Factor utilizado para calcular el promedio ponderado de las puntuaciones del equipo. 
+      Por defecto es 0.5.
+        Ejemplo: 0.5
 
-    Returns:
-        tuple: Two lists containing the new Elo ratings for the players of team 1 and team 2 respectively.
+    Retorna:
+    - team1_new_ratings (list of ints): Lista de las nuevas puntuaciones Elo de los jugadores del primer equipo.
+    - team2_new_ratings (list of ints): Lista de las nuevas puntuaciones Elo de los jugadores del segundo equipo.
     """
     team1_avg = sum(team1_ratings) / len(team1_ratings)
     team2_avg = sum(team2_ratings) / len(team2_ratings)
     
-    # if (result[0] == 0): result[0] = 1
-    # if (result[1] == 0): result[1] = 1
-    
-    # game_result = (result[0] / sum(result))*0.8 + 0.1
     game_result = (result[0] / sum(result))*0.9+ 0.05
-    # game_result = result[0] / sum(result)
         
     rating_diff = abs(team1_avg - team2_avg)
     
@@ -68,8 +73,40 @@ def update_elo_2v2(team1_ratings, team2_ratings, result, k=32, ratio=400, base=5
     
     return team1_new_ratings, team2_new_ratings
    
-def update_elo_american(ratings, results, multipistes, compensacio, compensacio2, bonificacion, k=20, ratio = 800,numpistas = 6, base = 10, factoravg = 0.5):
-    # Calcula los nuevos puntajes Elo de los jugadores
+def update_elo_american(ratings, results, multipistes = 20, compensacio = 0, compensacio2 = 10, bonificacion = 0, k=32, ratio = 600,numpistas = 6, base = 15, factoravg = 0.7):
+    """
+    Calcula los nuevos puntajes Elo de los jugadores en un formato de torneo americano.
+
+    Parámetros:
+    - ratings (list of tuples of ints): Lista de las puntuaciones Elo de las parejas de jugadores. 
+      Cada pareja se representa como una tupla con dos elementos que representan los ratings de cada uno de los jugadores.
+        Ejemplo: [(1500, 1600), (1550, 1650)]
+    - results (list of tuples of ints): Lista que contiene los resultados de las americanas de cada pareja. Cada resultado se representa
+      como una tupla donde el primer elemento es la pista inicial y el segundo elemento es la pista final.
+        Ejemplo: [(1, 3), (4, 2)]
+    - multipistes (float, optional): Factor de multiplicación utilizado para ajustar el factor de ganancia según las pistas.
+        Ejemplo: 5.0
+    - compensacio (float, optional): Compensación inicial para ajustar las puntuaciones Elo.
+        Ejemplo: 10.0
+    - compensacio2 (float, optional): Segunda compensación utilizada para ajustes adicionales de las puntuaciones Elo.
+        Ejemplo: 5.0
+    - bonificacion (float, optional): Bonificación aplicada según el rendimiento en las pistas.
+        Ejemplo: 10.0
+    - k (int, optional): Constante K utilizada en la fórmula de actualización del Elo. Por defecto es 20.
+        Ejemplo: 20
+    - ratio (int, optional): Valor del ratio utilizado en la fórmula para calcular la probabilidad esperada. Por defecto es 800.
+        Ejemplo: 800
+    - numpistas (int, optional): Número de pistas consideradas en el torneo. Por defecto es 6.
+        Ejemplo: 6
+    - base (int, optional): Base inicial para ajustar las puntuaciones Elo. Por defecto es 10.
+        Ejemplo: 10
+    - factoravg (float, optional): Factor utilizado para calcular el promedio ponderado de las puntuaciones del equipo. 
+      Por defecto es 0.5.
+        Ejemplo: 0.5
+
+    Retorna:
+    - new_ratings (list of tuples of ints): Lista de las nuevas puntuaciones Elo de las parejas de jugadores.
+    """
     new_ratings = []
     avg = 0
     for pareja in ratings: 
@@ -77,7 +114,7 @@ def update_elo_american(ratings, results, multipistes, compensacio, compensacio2
     avg = avg / (len(ratings)*2)
     
     i = 0
-    first = True
+
     for result in results:
         pistainicial = result[0]
         pistafinal = result[1]
@@ -134,390 +171,7 @@ def update_elo_american(ratings, results, multipistes, compensacio, compensacio2
             
         new_ratings.append((new_ratings_pareja[0],new_ratings_pareja[1]))
         i += 1
-        first = False
+
 
 
     return new_ratings
-
-####################################################################INTERFICIE STREAMLIT####################################################################
-
-
-def page1():
-    st.header("Calculadora de Puntajes Elo Partidos Normales")
-    
-    col1, col2= st.columns(2)
-    with col2:
-        st.subheader("Parámetros de Elo")
-        with st.expander("Parámetros de Elo", expanded=True,):
-            ratio = st.slider("Importancia de Diferencia de Ratings (Ratio)", min_value=100, max_value=2000, value=400, step=50)
-            k = st.slider("Factor de Ajuste Elo (k)", min_value=0, max_value=100, value=20, step=2)
-            base = st.slider("Valor Base (Base)", min_value=0, max_value=100, value=50, step=1)
-            factoravg = st.slider("Peso media pareja", min_value=0, max_value=100, value=70, step=1)
-
-    if "ratings" not in st.session_state:
-        st.session_state["ratings"] = [1200, 1210, 1220, 1230]
-        st.session_state["result"] = [7, 5]
-    
-    with col2:
-        with st.expander("Parámetros de Aleatoriedad", expanded=True):
-            min_rating = st.number_input("Rating Mínimo", value=1000)
-            max_rating = st.number_input("Rating Máximo", value=1500)
-        
-        generate_button = st.button("Generar Ratings Aleatorios")   
-        if generate_button:
-            st.session_state["ratings"] = [random.randint(min_rating, max_rating) for _ in range(4)]
-            result1 = random.randint(0, 7)
-            result2 = 7 if result1 != 7 else random.randint(0, 6)
-            st.session_state["result"] = [result1, result2]
-    
-    with col1:
-        st.subheader("Entrada de Ratings y Resultados")
-        with st.expander("Explicación de Parámetros:"):
-            st.write("""
-            - **Ratio**: Determina la importancia de la diferencia de ratings entre los equipos. Un valor más alto reduce la influencia de la diferencia de ratings.
-            
-            - **k**: Controla la velocidad de ajuste del rating Elo. Un valor más alto significa ajustes más rápidos.
-        
-            - **Base**: Ajuste adicional que puede influir en el cambio de rating, especialmente cuando hay grandes diferencias de rating entre equipos.
-                     
-            - **Peso media pareja**: Factor que pondera el rating de los jugadores en función de la pareja. Un valor más alto significa que el rating del jugador se basa más en su propio rating que en el de su compañero. Un valor de 50, equivale a una media normal.
-            """)
-
-        col3, col4 = st.columns(2)
-        with col3:
-            st.write("Equipo 1:")
-            team1_elo = [int(st.text_input(f"Jugador {i+1}: ", st.session_state["ratings"][i])) for i in range(2)]
-        with col4:
-            st.write("Equipo 2:")
-            team2_elo = [int(st.text_input(f"Jugador {i+3}: ", st.session_state["ratings"][i+2])) for i in range(2)]
-            
-        result_input = st.text_input("Resultado: ", f"{st.session_state['result'][0]}-{st.session_state['result'][1]}")
-        st.session_state["result"] = list(map(int, result_input.split("-")))
-
-        new_elo_team1, new_elo_team2 = update_elo_2v2(team1_elo, team2_elo, st.session_state["result"], k, ratio, base, factoravg/100)
-
-        data = {
-            "Jugador": ["Jugador 1", "Jugador 2", "Jugador 3", "Jugador 4"],
-            "Equipo": ["Equipo 1", "Equipo 1", "Equipo 2", "Equipo 2"],
-            "Rating Anterior": team1_elo + team2_elo,
-            "Nuevo Rating": new_elo_team1 + new_elo_team2
-        }
-
-        df = pd.DataFrame(data)
-        st.table(df)
-
-def page2():
-    st.header("Calculadora de Puntajes Elo Partidos Americana")
-    
-    col1, col2= st.columns(2)
-    with col2:
-        st.subheader("Parámetros de Elo")
-        with st.expander("Parámetros de Elo", expanded=True,):
-            ratio = st.slider("Importancia de Diferencia de Ratings (Ratio)", min_value=100, max_value=2000, value=400, step=50)
-            k = st.slider("Factor de Ajuste Elo (k)", min_value=0, max_value=100, value=20, step=2)
-            base = st.slider("Valor Base (Base)", min_value=0, max_value=100, value=20, step=1)
-            factoravg = st.slider("Peso media pareja", min_value=0, max_value=100, value=70, step=1)
-            
-    if "ratings" not in st.session_state:
-        st.session_state["ratings"] = [1200, 1210, 1220, 1230]
-        st.session_state["result"] = [7, 5]
-    
-    with col2:
-        with st.expander("Parámetros de Aleatoriedad", expanded=True):
-            min_rating = st.number_input("Rating Mínimo", value=1000)
-            max_rating = st.number_input("Rating Máximo", value=1500)
-        
-        generate_button = st.button("Generar Ratings Aleatorios")   
-        if generate_button:
-            st.session_state["ratings"] = [random.randint(min_rating, max_rating) for _ in range(4)]
-            result1 = random.randint(0, 7)
-            result2 = 7 if result1 != 7 else random.randint(0, 6)
-            st.session_state["result"] = [result1, result2]
-    
-    with col1:
-        st.subheader("Entrada de Ratings y Resultados")
-        with st.expander("Explicación de Parámetros:"):
-            st.write("""
-            - **Ratio**: Determina la importancia de la diferencia de ratings entre los equipos. Un valor más alto reduce la influencia de la diferencia de ratings.
-            
-            - **k**: Controla la velocidad de ajuste del rating Elo. Un valor más alto significa ajustes más rápidos.
-        
-            - **Base**: Ajuste adicional que puede influir en el cambio de rating, especialmente cuando hay grandes diferencias de rating entre equipos.
-                     
-            - **Peso media pareja**: Factor que pondera el rating de los jugadores en función de la pareja. Un valor más alto significa que el rating del jugador se basa más en su propio rating que en el de su compañero. Un valor de 50, equivale a una media normal.
-            """)
-        col3, col4 = st.columns(2)
-        with col3:
-            st.write("Equipo 1:")
-            team1_elo = [int(st.text_input(f"Jugador {i+1}: ", st.session_state["ratings"][i])) for i in range(2)]
-        with col4:
-            st.write("Equipo 2:")
-            team2_elo = [int(st.text_input(f"Jugador {i+3}: ", st.session_state["ratings"][i+2])) for i in range(2)]
-            
-        result_input = st.text_input("Resultado: ", f"{st.session_state['result'][0]}-{st.session_state['result'][1]}")
-        st.session_state["result"] = list(map(int, result_input.split("-")))
-
-        new_elo_team1, new_elo_team2 = update_elo_2v2(team1_elo, team2_elo, st.session_state["result"], k, ratio, base, factoravg/100)
-
-        data = {
-            "Jugador": ["Jugador 1", "Jugador 2", "Jugador 3", "Jugador 4"],
-            "Equipo": ["Equipo 1", "Equipo 1", "Equipo 2", "Equipo 2"],
-            "Rating Anterior": team1_elo + team2_elo,
-            "Nuevo Rating": new_elo_team1 + new_elo_team2
-        }
-
-        df = pd.DataFrame(data)
-        st.table(df)
-        
-def update_ratingsComplets(key, index, isSecond, ratings):
-
-    value = st.session_state[key]
-    
-    if ratings:
-        if not isSecond:
-            newRating = (value, loads(st.session_state.ratingsComplets)[index][1])
-        else:
-            newRating = (loads(st.session_state.ratingsComplets)[index][0], value)
-        aux = loads(st.session_state.ratingsComplets)
-        aux[index] = newRating
-        st.session_state.ratingsComplets = dumps(aux)
-    else:
-        if not isSecond:
-            newResult = (value, loads(st.session_state.resultsComplets)[index][1])
-        else:
-            newResult = (loads(st.session_state.resultsComplets)[index][0], value)
-        aux = loads(st.session_state.resultsComplets)
-        aux[index] = newResult
-        st.session_state.resultsComplets = dumps(aux)    
-
-def page3():
-    st.header("Calculadora de Puntajes Elo Partidos Americana Sube-Baja")
-    st.write("")
-    st.write("")
-
-    if "ratingsComplets" not in st.session_state:
-        ratingsComplets = [(1000, 1000)] * 12
-        st.session_state.ratingsComplets = dumps(ratingsComplets)
-
-    if "resultsComplets" not in st.session_state:
-        resultsComplets = [(1, 1), (1, 1), (2, 2), (2, 2), (3, 3), (3, 3), (4, 4), (4, 4), (5, 5), (5, 5), (6, 6), (6, 6)]
-        st.session_state.resultsComplets = dumps(resultsComplets)
-
-    for i in range(0, 12):
-        st.session_state[f"rating_{i*2}"] = loads(st.session_state.ratingsComplets)[i][0]
-        st.session_state[f"rating_{i*2+1}"] = loads(st.session_state.ratingsComplets)[i][1]
-        st.session_state[f"result_INI_{i}"] = loads(st.session_state.resultsComplets)[i][0]
-        st.session_state[f"result_FIN_{i}"] = loads(st.session_state.resultsComplets)[i][1]
-
-    with st.expander(r"$\textsf{\Large Explicacion de parametros}$", expanded=True):
-        st.markdown("""
-            - **Importancia de Diferencia de Ratings:** Determina la sensibilidad del cálculo Elo a la diferencia de ratings entre jugadores. Valores más altos hacen que la diferencia de rating tenga menos impacto.
-            - **Factor de Ajuste Elo:** Controla la magnitud del ajuste del rating después de cada partida. Valores más altos resultan en cambios de rating más grandes.
-            - **Puntuación Base:** Añade una cantidad fija al ajuste de Elo en cada partida.
-            - **Multiplicador de Pistas en %:** Ajusta el impacto de la diferencia de pistas ganadas o perdidas en el cálculo del Elo. Se aplica sobre la puntuación base. Si se suben 5 pistas se ganará (4 * multiplicador * base) como valor base.
-            - **Compensación:** Ajusta el Elo de los jugadores que empiezan en la pista 1/2 y terminan en la 1 y de los jugadores que empiezan en la 5/6 y terminan en la 6.
-            - **penalizacion 5/6:** Aplica una esta penalización por terminar en la pista 6 y la mitad por terminal en la pista 5. La penalizacion se ve aumentada en caso de que la mendia ponderada del jugador sea peor que la media.
-            - **bonificacion 1/2:** Aplica una bonificación por terminar en la pista 1 y la mitad por terminal en la pista 2. La bonificación se ve aumentada en caso de que la mendia ponderada del jugador sea mejor que la media.
-            - **Peso media pareja:** Factor que pondera el rating de los jugadores en función de la pareja. Un valor más alto significa que el rating del jugador se basa más en su propio rating que en el de su compañero. Un valor de 50 equivale a una media normal.
-        """)
-
-    st.subheader("Configuración de Parámetros Aleatorios")
-    with st.expander(r"$\textsf{\Large Configuración de Ratings Aleatorios}$", expanded=True):
-        variability = st.number_input("Variabilidad respecto a la media", value=200)
-        average = st.number_input("Media", value=1500)
-
-    st.subheader("Configuración Parámetros")
-    with st.expander(r"$\textsf{\Large Parametros de Elo}$", expanded=True):
-        col1, col2 = st.columns([1, 1])
-        with col1:
-            ratio = st.slider("Importancia de Diferencia de Ratings", min_value=100, max_value=3000, value=600, step=20)
-            k = st.slider("Factor de Ajuste Elo", min_value=10, max_value=300, value=32, step=1)
-            base = st.slider("Puntuación Base", min_value=0, max_value=100, value=20, step=1)
-            penalizacion = st.slider("Penalizacion 5/6", min_value=0, max_value=100, value=10, step=1)
-            
-        with col2:
-            multpistes = st.slider("Multiplicador de Pistas en %", min_value=0, max_value=100, value=20, step=1)
-            compensacio = st.slider("Compensación", min_value=0, max_value=100, value=0, step=1)
-            factoravg = st.slider("Peso Media Pareja", min_value=0, max_value=100, value=70, step=1)
-            bonificacion = st.slider("Bonificacion 1/2", min_value=0, max_value=100, value=0, step=1)
-    
-    generate_ratings = st.button("Ratings Aleatorios")
-
-    if generate_ratings:
-        num_pairs = 12
-        st.session_state.ratingsComplets = dumps([(random.randint(average - variability, average + variability), 
-                                                   random.randint(average - variability, average + variability)) for _ in range(num_pairs)])
-        aux = []
-        pistasInicials = {}
-        pistasFinals = {}
-        
-        for i in range(0, num_pairs):
-            pIni = random.randint(1, 6)
-            while (pIni in pistasInicials and pistasInicials[pIni] >= 2):
-                pIni = random.randint(1, 6)
-            pistasInicials[pIni] = pistasInicials.get(pIni, 0) + 1
-            pFin = random.randint(1, 6)
-            while (pFin in pistasFinals and pistasFinals[pFin] >= 2):
-                pFin = random.randint(1, 6)
-            pistasFinals[pFin] = pistasFinals.get(pFin, 0) + 1
-            aux.append((pIni, pFin))
-
-        for i in range(12):
-            st.session_state[f"rating_{i*2}"] = loads(st.session_state.ratingsComplets)[i][0]
-            st.session_state[f"rating_{i*2+1}"] = loads(st.session_state.ratingsComplets)[i][1]
-            st.session_state[f"result_INI_{i}"] = aux[i][0]
-            st.session_state[f"result_FIN_{i}"] = aux[i][1]
-        st.session_state.resultsComplets = dumps(aux)
-
-
-
-    st.subheader("Entrada de Ratings y Resultados")
-
-    avg = sum([sum(pair) for pair in loads(st.session_state.ratingsComplets)]) / (len(loads(st.session_state.ratingsComplets)) * 2)
-    st.subheader(f"Media del pozo: {round(avg)}")
-
-    colR = {}
-    col1, col2 = st.columns(2)
-    with col1:
-        for i in range(0, 12, 2):
-            with st.expander(f"pareja {i}", expanded=True):
-                col3, colR[i], col5 = st.columns(3)
-                with col3:
-                    st.number_input(f"Jugador {i*2}", key=f"rating_{i*2}", step=1, 
-                                    on_change=update_ratingsComplets, args=(f"rating_{i*2}", i, False, True))
-                    st.number_input(f"Jugador {i*2+1}", key=f"rating_{i*2+1}", step=1, 
-                                    on_change=update_ratingsComplets, args=(f"rating_{i*2+1}", i, True, True))
-                with col5:
-                    st.number_input(f"Pista Inicial Pareja {i}", key=f"result_INI_{i}", min_value=1, max_value=6, step=1, 
-                                    on_change=update_ratingsComplets, args=(f"result_INI_{i}", i, False, False))
-                    st.number_input(f"Pista Final Pareja {i}", key=f"result_FIN_{i}", min_value=1, max_value=6, step=1, 
-                                    on_change=update_ratingsComplets, args=(f"result_FIN_{i}", i, True, False))
-    
-    with col2:
-        for i in range(1, 12, 2):
-            with st.expander(f"pareja {i}", expanded=True):
-                col3, colR[i], col5 = st.columns(3)
-                with col3:
-                    st.number_input(f"Jugador {i*2}", key=f"rating_{i*2}", step=1, 
-                                    on_change=update_ratingsComplets, args=(f"rating_{i*2}", i, False, True))
-                    st.number_input(f"Jugador {i*2+1}", key=f"rating_{i*2+1}", step=1, 
-                                    on_change=update_ratingsComplets, args=(f"rating_{i*2+1}", i, True, True))
-                with col5:
-                    st.number_input(f"Pista Inicial Pareja {i}", key=f"result_INI_{i}", min_value=1, max_value=6, step=1, 
-                                    on_change=update_ratingsComplets, args=(f"result_INI_{i}", i, False, False))
-                    st.number_input(f"Pista Final Pareja {i}", key=f"result_FIN_{i}", min_value=1, max_value=6, step=1, 
-                                    on_change=update_ratingsComplets, args=(f"result_FIN_{i}", i, True, False))
-
-
-    new_elo_team1 = update_elo_american(loads(st.session_state.ratingsComplets),  loads(st.session_state.resultsComplets), multpistes, compensacio, penalizacion, bonificacion, k = k, ratio = ratio, base = base, factoravg = factoravg/100)
-
-
-
-    for i in range(12):
-        with colR[i]:
-            st.text_input(f"Cambio Elo Jugador {i*2}", str(new_elo_team1[i][0]), disabled=True)
-            st.text_input(f"Cambio Elo Jugador {i*2+1}", str(new_elo_team1[i][1]), disabled=True)
-
-
-
-
-    st.write("")
-    st.write("")
-
-
-
-def page4():
-    st.header("Calculadora de Puntajes Elo Partidos Americana Sube-Baja")
-    st.write("")
-    st.write("")
-
-    if "ratings" not in st.session_state:
-        st.session_state.ratings = (1500, 1500)
-    if "results" not in st.session_state:
-        st.session_state.results = (1, 1)
-    with st.expander(r"$\textsf{\Large Explicacion de parametros}$", expanded = True):
-            st.markdown("""
-                - **Importancia de Diferencia de Ratings:** Determina la sensibilidad del cálculo Elo a la diferencia de ratings entre jugadores. Valores más altos hacen que la diferencia de rating tenga menos impacto.
-                - **Factor de Ajuste Elo:** Controla la magnitud del ajuste del rating después de cada partida. Valores más altos resultan en cambios de rating más grandes.
-                - **Puntuación Base:** Añade una cantidad fija al ajuste de Elo en cada partida.
-                - **Multiplicador de Pistas en %:** Ajusta el impacto de la diferencia de pistas ganadas o perdidas en el cálculo del Elo. Se aplica sobre la puntuacion base. Si se suben 5 pistas se ganara (4 * multiplcador * base) como valor base.
-                - **Compensación:** Ajusta el Elo de los jugadores que empiezan en la pista 1/2 y terminan en la 1 y de los jugadores que empiezan en la 5/6 y terminan en la 6.
-                - **penalizacion 5/6:** Aplica una esta penalización por terminar en la pista 6 y la mitad por terminal en la pista 5. La penalizacion se ve aumentada en caso de que la mendia ponderada del jugador sea peor que la media.
-                - **bonificacion 1/2:** Aplica una bonificación por terminar en la pista 1 y la mitad por terminal en la pista 2. La bonificación se ve aumentada en caso de que la mendia ponderada del jugador sea mejor que la media.
-                - **Peso media pareja:** Factor que pondera el rating de los jugadores en función de la pareja. Un valor más alto significa que el rating del jugador se basa más en su propio rating que en el de su compañero. un valor de 50, equivale a una media normal.
-            """)
-    col1, col2 = st.columns([2,1])
-    with col2:
-        st.subheader("Configuración Parámetros")
-        with st.expander(r"$\textsf{\Large Parametros de Elo}$", expanded=True):
-            ratio = st.slider("Importancia de Diferencia de Ratings", min_value=100, max_value=3000, value=600, step=20)
-            k = st.slider("Factor de Ajuste Elo", min_value=10, max_value=300, value=32, step=1)
-            base = st.slider("puntuacion base", min_value=0, max_value=100, value=15, step=1)
-            multpistes = st.slider("Multiplicador de pistas en %", min_value=0, max_value=100, value=20, step=1)
-            compensacio = st.slider("Compensación", min_value=0, max_value=100, value=0, step=1)
-            factoravg = st.slider("Peso media pareja", min_value=0, max_value=100, value=70, step=1)
-            penalizacion = st.slider("Penalizacion 5/6", min_value=0, max_value=100, value=10, step=1)
-            bonificacion = st.slider("Bonificacion 1/2", min_value=0, max_value=100, value=0, step=1)
-    
-    with col1:
-        st.subheader("Configuración de parametros aleatorios")
-    
-        with st.expander(r"$\textsf{\Large Configuración de Ratings Aleatorios}$", expanded=True):
-            variability = st.number_input("Variabilitat respecte la mitjana", value=200)
-            average = st.number_input("mitjana", value=1500)
-
-        generate_ratings = st.button("Ratings Aleatorios")
-
-        ratings = [st.session_state.ratings, (average, average),(average, average),(average, average),(average, average),(average, average),(average, average),(average, average),(average, average),(average, average),(average, average),(average, average),]
-        results = [st.session_state.results, (1,1), (2,2), (2,2), (3,3), (3,3), (4,4), (4,4), (5,5), (5,5), (6,6), (6,6)]
-
-        if generate_ratings == True:
-            randratings = (random.randint(average-variability, average+variability), random.randint(average-variability, average+variability))
-            st.session_state.ratings = randratings
-            ratings[0] = st.session_state.ratings
-            result = (random.randint(1,6), random.randint(1,6))
-            st.session_state.results = result
-            results[0] = st.session_state.results
-
-        st.subheader("Entrada de Ratings y Resultados")
-
-        #avg
-        avg = 0
-        for pareja in ratings:
-            avg += pareja[0] + pareja[1]
-        avg = avg / (len(ratings)*2)
-        st.subheader(f"Media del pozo real: {round(avg)}") 
-        col3, col4, col5 = st.columns([5,5,6])
-        with col3:
-            ratings[0] = (st.number_input("Jugador 1: ", value=ratings[0][0]), st.number_input("Jugador 2: ", value=ratings[0][1]))
-        with col4:
-            results[0] = (st.number_input("Pista Inicial: ", min_value=1, max_value = 6, value=results[0][0]), st.number_input("Pista Final: ", min_value=1, max_value = 6, value=results[0][1]))
-            
-        new_elo_team1 = update_elo_american(ratings, results, multpistes, compensacio, penalizacion, bonificacion, k = k, ratio = ratio, base = base, factoravg = factoravg/100)
-
-    with col5:
-        st.write("Resultados:")
-        data = {
-            'Jugador': ['Jugador 1', 'Jugador 2'],
-            'Rating inicial': [ratings[0][0], ratings[0][1]],
-            'Cambio Elo': [new_elo_team1[0][0], new_elo_team1[0][1]]
-        }
-
-        df = pd.DataFrame(data)
-        st.write(df)
-
-st.set_page_config(layout="wide")
-            
-menu = st.sidebar.radio("Menu", ["Partido Normal", "Americana", "Americana Sube-Baja Entera", "Americana Sube-Baja"])
-
-
-if menu == "Partido Normal":
-    page1()
-elif menu == "Americana":
-    page2()
-elif menu == "Americana Sube-Baja Entera":
-    page3()
-elif menu == "Americana Sube-Baja":
-    page4()
-else:
-    st.error("Opción no válida")
